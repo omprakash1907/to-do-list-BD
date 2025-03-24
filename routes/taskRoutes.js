@@ -1,12 +1,20 @@
 const express = require("express");
-const { createTask, getTasks, updateTask, deleteTask } = require("../controllers/taskController");
-const { protect } = require("../middleware/authMiddleware");
 
-const router = express.Router();
+module.exports = (taskController) => {
+  if (!taskController) throw new Error("taskController is undefined");
 
-router.post("/", protect, createTask);
-router.get("/", protect, getTasks);
-router.put("/:id", protect, updateTask);
-router.delete("/:id", protect, deleteTask);
+  const { createTask, getTasks, updateTask, deleteTask } = taskController;
 
-module.exports = router;
+  if (!createTask || !getTasks || !updateTask || !deleteTask) {
+    throw new Error("Some taskController methods are undefined.");
+  }
+
+  const router = express.Router();
+
+  router.post("/", createTask);
+  router.get("/", getTasks);
+  router.put("/:id", updateTask);
+  router.delete("/:id", deleteTask);
+
+  return router;
+};
