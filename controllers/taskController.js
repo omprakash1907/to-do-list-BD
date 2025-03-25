@@ -7,8 +7,15 @@ module.exports = (io) => {
   return {
     createTask: async (req, res) => {
       try {
-        const { title, description, status, priority, dueDate, assignedTo } = req.body;
-        if (!title) return res.status(400).json({ message: "Title is required" });
+        const { title, description, status, priority, dueDate, assignedTo } =
+          req.body;
+        if (!req.user || !req.user.id) {
+          return res
+            .status(401)
+            .json({ message: "Unauthorized: User not found" });
+        }
+        if (!title)
+          return res.status(400).json({ message: "Title is required" });
 
         const task = await Task.create({
           title,
@@ -31,7 +38,9 @@ module.exports = (io) => {
         res.status(201).json(task);
       } catch (error) {
         console.error("❌ Create Task Error:", error);
-        res.status(500).json({ message: "Failed to create task", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Failed to create task", error: error.message });
       }
     },
 
@@ -41,23 +50,34 @@ module.exports = (io) => {
         res.status(200).json(tasks);
       } catch (error) {
         console.error("❌ Get Tasks Error:", error);
-        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Failed to fetch tasks", error: error.message });
       }
     },
 
     updateTask: async (req, res) => {
       try {
-        const { title, description, status, priority, dueDate, assignedTo } = req.body;
+        const { title, description, status, priority, dueDate, assignedTo } =
+          req.body;
         let task = await Task.findById(req.params.id);
         if (!task) return res.status(404).json({ message: "Task not found" });
 
         const changes = [];
         if (title && title !== task.title) changes.push("updated title");
-        if (description && description !== task.description) changes.push("updated description");
-        if (status && status !== task.status) changes.push(`changed status to ${status}`);
-        if (priority && priority !== task.priority) changes.push(`changed priority to ${priority}`);
-        if (dueDate && new Date(dueDate).getTime() !== new Date(task.dueDate).getTime()) changes.push("updated due date");
-        if (assignedTo && String(assignedTo) !== String(task.assignedTo)) changes.push("changed assignee");
+        if (description && description !== task.description)
+          changes.push("updated description");
+        if (status && status !== task.status)
+          changes.push(`changed status to ${status}`);
+        if (priority && priority !== task.priority)
+          changes.push(`changed priority to ${priority}`);
+        if (
+          dueDate &&
+          new Date(dueDate).getTime() !== new Date(task.dueDate).getTime()
+        )
+          changes.push("updated due date");
+        if (assignedTo && String(assignedTo) !== String(task.assignedTo))
+          changes.push("changed assignee");
 
         task = await Task.findByIdAndUpdate(
           req.params.id,
@@ -78,7 +98,9 @@ module.exports = (io) => {
         res.status(200).json(task);
       } catch (error) {
         console.error("❌ Update Task Error:", error);
-        res.status(500).json({ message: "Failed to update task", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Failed to update task", error: error.message });
       }
     },
 
@@ -99,7 +121,9 @@ module.exports = (io) => {
         res.status(200).json({ message: "Task deleted successfully" });
       } catch (error) {
         console.error("❌ Delete Task Error:", error);
-        res.status(500).json({ message: "Failed to delete task", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Failed to delete task", error: error.message });
       }
     },
   };

@@ -1,11 +1,21 @@
 const express = require("express");
-const { verifyToken } = require("../middleware/authMiddleware");
-const { addComment, getComments, deleteComment } = require("../controllers/commentController");
+const { protect } = require("../middleware/authMiddleware"); // Import middleware
 
-const router = express.Router();
+module.exports = (commentController) => {
+  if (!commentController) throw new Error("commentController is undefined");
 
-router.post("/:taskId", verifyToken, addComment);
-router.get("/:taskId", verifyToken, getComments);
-router.delete("/:commentId", verifyToken, deleteComment);
+  const { addComment, getComments, updateComment, deleteComment } = commentController;
 
-module.exports = router;
+  if (!addComment || !getComments || !updateComment || !deleteComment) {
+    throw new Error("Some commentController methods are undefined.");
+  }
+
+  const router = express.Router();
+
+  router.post("/", protect, addComment);
+  router.get("/:taskId", protect, getComments);
+  router.put("/:id", protect, updateComment);
+  router.delete("/:id", protect, deleteComment);
+
+  return router;
+};

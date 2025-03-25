@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect } = require("../middleware/authMiddleware"); // Import protect middleware
 
 module.exports = (taskController) => {
   if (!taskController) throw new Error("taskController is undefined");
@@ -11,10 +12,10 @@ module.exports = (taskController) => {
 
   const router = express.Router();
 
-  router.post("/", createTask);
-  router.get("/", getTasks);
-  router.put("/:id", updateTask);
-  router.delete("/:id", deleteTask);
+  router.post("/", protect, createTask);
+  router.get("/", protect, getTasks);
+  router.put("/:id", protect, updateTask);
+  router.delete("/:id", protect, deleteTask);
 
   return router;
 };
