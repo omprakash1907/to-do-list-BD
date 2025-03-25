@@ -22,7 +22,7 @@ const startServer = async () => {
     app.use(cors());
     app.use(express.json());
 
-    // ✅ Pass io instance to taskController
+    // ✅ Initialize taskController and pass io instance
     const taskController = initializeTaskController(io);
 
     // ✅ Pass taskController to taskRoutes
@@ -37,10 +37,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-// ✅ Handle WebSocket connections
-io.on("connection", (socket) => {
-  console.log("🔗 Client connected:", socket.id);
-
-  socket.on("disconnect", () => console.log("❌ Client disconnected:", socket.id));
-});
