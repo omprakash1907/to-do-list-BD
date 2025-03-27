@@ -9,7 +9,9 @@ const taskRoutes = require("./routes/taskRoutes");
 const authRoutes = require("./routes/authRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const activityRoutes = require("./routes/activityRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const initializeCommentController = require("./controllers/commentController");
+const initializeNotificationController = require("./controllers/notificationController");
 
 const app = express();
 const server = http.createServer(app);
@@ -26,15 +28,31 @@ const startServer = async () => {
     app.use(cors());
     app.use(express.json());
 
-    // ✅ Initialize taskController and pass io instance
+    // ✅ Initialize controllers and pass io instance
     const taskController = initializeTaskController(io);
     const commentController = initializeCommentController(io);
+    const notificationController = initializeNotificationController(io);
 
-    // ✅ Pass taskController to taskRoutes
+    // ✅ Pass controllers to routes
     app.use("/tasks", taskRoutes(taskController));
     app.use("/auth", authRoutes);
     app.use("/activities", activityRoutes);
     app.use("/comments", commentRoutes(commentController));
+    app.use("/notifications", notificationRoutes(notificationController));
+
+    // Handle user connections
+    io.on("connection", (socket) => {
+      console.log("🔌 New user connected:", socket.id);
+
+      socket.on("join", (userId) => {
+        console.log(`📌 User joined: ${userId}`);
+        socket.join(userId);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("❌ User disconnected:", socket.id);
+      });
+    });
 
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () =>

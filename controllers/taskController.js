@@ -1,5 +1,6 @@
 const Task = require("../models/Task");
 const Activity = require("../models/Activity");
+const Notification = require("../models/Notification");
 
 module.exports = (io) => {
   if (!io) throw new Error("Socket.IO instance is required!");
@@ -33,8 +34,19 @@ module.exports = (io) => {
           action: "created the task",
         });
 
+        // 📢 Send notification to assigned user
+        if (assignedTo) {
+          const notification = await Notification.create({
+            user: assignedTo,
+            message: `You have been assigned a new task: ${task.title}`,
+            task: task._id,
+          });
+
+          io.to(assignedTo.toString()).emit("notification", notification);
+        }
+
         console.log("✅ Task Created:", task);
-        io.emit("taskCreated", task);
+        io.emit("taskAdded", task);
         res.status(201).json(task);
       } catch (error) {
         console.error("❌ Create Task Error:", error);
@@ -93,6 +105,20 @@ module.exports = (io) => {
           });
         }
 
+        // 📢 Notify user on status change
+        if (status !== task.status) {
+          const notification = await Notification.create({
+            user: assignedTo || task.assignedTo,
+            message: `Task "${task.title}" status changed to ${status}`,
+            task: task._id,
+          });
+
+          io.to((assignedTo || task.assignedTo).toString()).emit(
+            "notification",
+            notification
+          );
+        }
+
         console.log("🔄 Task Updated:", task);
         io.emit("taskUpdated", task);
         res.status(200).json(task);
@@ -116,6 +142,18 @@ module.exports = (io) => {
         });
 
         await task.deleteOne();
+
+        // 📢 Notify assigned user
+        if (task.assignedTo) {
+          const notification = await Notification.create({
+            user: task.assignedTo,
+            message: `Task "${task.title}" was deleted`,
+            task: task._id,
+          });
+
+          io.to(task.assignedTo.toString()).emit("notification", notification);
+        }
+
         console.log("🗑️ Task Deleted:", req.params.id);
         io.emit("taskDeleted", req.params.id);
         res.status(200).json({ message: "Task deleted successfully" });

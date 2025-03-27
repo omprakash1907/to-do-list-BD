@@ -27,15 +27,17 @@ const registerUser = async (req, res) => {
 
   const user = await User.create({ name, email, password: hashedPassword });
 
-  if (user) {
-    res.status(201).json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.json({
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+      },
       token: generateToken(user.id),
     });
   } else {
-    res.status(400).json({ message: "Invalid user data" });
+    res.status(400).json({ message: "Invalid credentials" });
   }
 };
 
@@ -48,9 +50,11 @@ const loginUser = async (req, res) => {
 
   if (user && (await bcrypt.compare(password, user.password))) {
     res.json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+      },
       token: generateToken(user.id),
     });
   } else {
