@@ -69,4 +69,16 @@ const getMe = async (req, res) => {
   res.json(user);
 };
 
-module.exports = { registerUser, loginUser, getMe };
+// @desc Get all users
+// @route GET /auth/users
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("_id name email"); // Exclude passwords
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, getUsers };
+

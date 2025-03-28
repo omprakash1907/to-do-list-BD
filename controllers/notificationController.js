@@ -36,5 +36,29 @@ module.exports = (io) => {
         res.status(500).json({ message: "Failed to mark notifications as read", error: error.message });
       }
     },
+
+    createNotification: async (req, res) => {
+      try {
+        const { user, message, task } = req.body;
+
+        if (!user || !message) {
+          return res.status(400).json({ message: "User and message are required" });
+        }
+
+        const notification = await Notification.create({
+          user,
+          message,
+          task: task || null,
+        });
+
+        // Emit the notification to the user via Socket.IO
+        io.to(user.toString()).emit("notification", notification);
+
+        res.status(201).json(notification);
+      } catch (error) {
+        console.error("❌ Create Notification Error:", error);
+        res.status(500).json({ message: "Failed to create notification", error: error.message });
+      }
+    },
   };
 };
