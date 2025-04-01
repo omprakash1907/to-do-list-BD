@@ -1,12 +1,5 @@
 const Notification = require("../models/Notification");
 
-/**
- * Store a notification in the database and emit it via Socket.IO
- * @param {Object} io - The Socket.IO instance
- * @param {String} userId - The ID of the user receiving the notification
- * @param {String} message - The notification message
- * @param {String} [taskId] - The related task ID (optional)
- */
 const sendNotification = async (io, userId, message, taskId = null) => {
   try {
     const notification = await Notification.create({
@@ -15,12 +8,19 @@ const sendNotification = async (io, userId, message, taskId = null) => {
       task: taskId,
     });
 
-    // Emit notification to the user's socket room
-    io.to(userId.toString()).emit("notification", notification);
+    // Populate notification data before emitting
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('task', 'title')
+      .populate('user', 'name');
 
-    console.log("📩 Notification stored and sent:", notification);
+    // Emit to specific user's room
+    io.to(userId.toString()).emit("notification:new", populatedNotification);
+
+    console.log("📩 Notification sent to user:", userId);
+    return populatedNotification;
   } catch (error) {
-    console.error("❌ Error storing notification:", error);
+    console.error("❌ Notification Error:", error);
+    throw error; // Let the caller handle the error
   }
 };
 

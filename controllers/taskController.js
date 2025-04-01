@@ -35,9 +35,23 @@ module.exports = (io) => {
           action: "created the task",
         });
 
-        // 📢 Send notification to assigned user
-        if (assignedTo) {
-          await sendNotification(io, assignedTo, `You have been assigned a new task: ${task.title}`, task._id);
+        if (assignedTo && assignedTo.toString() !== req.user.id.toString()) {
+          await sendNotification(
+            io,
+            assignedTo,
+            `You have been assigned a new task: "${task.title}"`,
+            task._id
+          );
+        }
+
+        // Notify creator if they're not the assignee
+        if (assignedTo && assignedTo.toString() !== req.user.id.toString()) {
+          await sendNotification(
+            io,
+            req.user.id,
+            `You created task "${task.title}" and assigned it to ${task.assignedTo.name}`,
+            task._id
+          );
         }
 
         console.log("✅ Task Created:", task);
@@ -93,10 +107,25 @@ module.exports = (io) => {
           });
         }
     
-        // 📢 Notify user on status change
-        if (status && status !== previousStatus) {
-          await sendNotification(io, assignedTo || task.assignedTo, `Task "${task.title}" status changed to ${status}`, task._id);
-        }
+       // Notify on assignee change
+       if (assignedTo && String(assignedTo) !== String(task.assignedTo)) {
+        await sendNotification(
+          io,
+          assignedTo,
+          `You've been assigned to task: "${task.title}"`,
+          task._id
+        );
+      }
+
+      // Notify on status change
+      if (status && status !== previousStatus) {
+        await sendNotification(
+          io,
+          task.assignedTo || assignedTo,
+          `Task "${task.title}" status changed to ${status}`,
+          task._id
+        );
+      }
     
         console.log("🔄 Task Updated:", task);
         io.emit("taskUpdated", task);
